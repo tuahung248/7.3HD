@@ -1,16 +1,6 @@
 pipeline {
     agent any
-
-    stages {
-        stage('Check Python') {
-            steps {
-                bat '"C:\\Users\\tuant\\AppData\\Local\\Programs\\Python\\Python313\\python.exe" --version'
-                bat '"C:\\Users\\tuant\\AppData\\Local\\Programs\\Python\\Python313\\python.exe" -m pip --version'
-                bat 'echo %PATH%'
-                bat 'docker --version'
-                bat 'docker info'
-            }
-        }
+    
         stage('Build') {
             steps {
                 dir('backend') {
