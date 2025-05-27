@@ -104,21 +104,20 @@ pipeline {
         stage('Monitoring and Alerts') {
             steps {
                 script {
-                    // Wait for container to start
+                    // Wait for the container to start
                     bat 'ping -n 8 127.0.0.1 > nul'
-                    def result = bat(script: 'curl -s -o nul -w "%{http_code}" http://localhost:8001/', returnStdout: true).trim()
+                    // Perform the health check
+                    def result = bat(
+                        script: 'curl -s -o nul -w "%{http_code}" http://localhost:8001/',
+                        returnStdout: true
+                    ).trim()
                     if (result != '200') {
-                        // Only works if Jenkins Mailer plugin and SMTP are configured:
-                        // mail to: 'yourteam@deakin.edu.au',
-                        //      subject: "Production App Health Check Failed",
-                        //      body: "Health check failed with status: ${result}"
                         echo "ALERT: Health check failed with status: ${result}"
                         error "App is DOWN! Health check failed."
                     }
                 }
             }
         }
-    }
 
     post {
         success {
