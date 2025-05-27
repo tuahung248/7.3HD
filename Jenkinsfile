@@ -2,6 +2,17 @@ pipeline {
     agent any
 
     stages {
+    stage('Check Python') {
+        steps {
+            bat 'where python'
+            bat 'where pip'
+            bat 'python --version'
+            bat 'pip --version'
+            bat 'echo %PATH%'
+        }
+    }
+
+    stages {
         stage('Build') {
             steps {
                 dir('backend') {
