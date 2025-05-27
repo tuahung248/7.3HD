@@ -100,13 +100,6 @@ pipeline {
                 }
             }
         }
-        stage('Curl Test') {
-            steps {
-                bat 'curl --version'
-                bat 'curl http://localhost:8001/'
-                bat 'curl -s -o nul -w "%{http_code}" http://localhost:8001/'
-            }
-        }
         stage('Monitoring and Alerts') {
             steps {
                 script {
