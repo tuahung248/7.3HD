@@ -1,6 +1,7 @@
 pipeline {
     agent any
-    
+
+    stages {
         stage('Build') {
             steps {
                 dir('backend') {
@@ -30,6 +31,7 @@ pipeline {
                 }
             }
         }
+    }
 
     post {
         always {
