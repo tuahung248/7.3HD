@@ -106,7 +106,7 @@ pipeline {
                 bat 'curl http://localhost:8001/'
                 bat 'curl -s -o nul -w "%{http_code}" http://localhost:8001/'
             }
-        }        
+        }
         stage('Monitoring and Alerts') {
             steps {
                 script {
@@ -130,6 +130,8 @@ pipeline {
                 }
             }
         }
+    } // <---- End of stages
+
     post {
         success {
             echo "Pipeline completed successfully! All quality gates and deployment stages passed."
