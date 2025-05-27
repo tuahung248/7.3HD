@@ -37,7 +37,8 @@ pipeline {
         stage('Unit + Integration Test') {
             steps {
                 dir('backend') {
-                    bat "${PYTHON} -m pytest --cov=."
+                    bat 'if not exist test-reports mkdir test-reports'
+                    bat '${PYTHON} -m pytest --junitxml=test-reports/results.xml'
                 }
                 junit 'backend/test-reports/*.xml'
             }
