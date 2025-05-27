@@ -36,7 +36,7 @@ pipeline {
             steps {
                 dir('backend') {
                     bat 'if not exist test-reports mkdir test-reports'
-                    bat '${PYTHON} -m pytest --junitxml=test-reports/results.xml'
+                    bat "${PYTHON} -m pytest --junitxml=test-reports/results.xml"
                 }
                 junit 'backend/test-reports/*.xml'
             }
