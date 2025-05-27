@@ -133,7 +133,7 @@ pipeline {
                     for (int i = 0; i < 10; i++) {
                         sleep(time: 3, unit: 'SECONDS')
                         try {
-                            def result = bat(script: 'curl -s -o nul -w "%{http_code}" http://localhost:8001/', returnStdout: true).trim()
+                            def result = bat(script: 'curl -s -o nul -w "%%{http_code}" http://localhost:8001/', returnStdout: true).trim()
                             if (result == '200') {
                                 echo "Health check passed: ${result}"
                                 healthy = true
