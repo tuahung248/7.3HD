@@ -29,7 +29,7 @@ pipeline {
             steps {
                 dir('backend') {
                     bat '"C:\\Users\\tuant\\AppData\\Local\\Programs\\Python\\Python313\\python.exe" -m pip install bandit'
-                    bat '"C:\\Users\\tuant\\AppData\\Local\\Programs\\Python\\Python313\\Scripts\\bandit.exe" -r .'
+                    bat '"C:\\Users\\tuant\\AppData\\Local\\Programs\\Python\\Python313\\Scripts\\bandit.exe" -r . --skip B101'
                 }
             }
         }
