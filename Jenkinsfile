@@ -2,108 +2,119 @@ pipeline {
     agent any
 
     environment {
-        // Versioning: Use the Jenkins build number as Docker image tag
-        BUILD_VERSION = "${BUILD_NUMBER}"
-        IMAGE_NAME = "hr-policy-assistant"
-        PROD_IMAGE_TAG = "prod"
-        TEST_CONTAINER = "hr-policy-assistant-test"
-        PROD_CONTAINER = "hr-policy-assistant-prod"
-        PYTHON = "C:\\Users\\tuant\\AppData\\Local\\Programs\\Python\\Python313\\python.exe"
-        PIP = "C:\\Users\\tuant\\AppData\\Local\\Programs\\Python\\Python313\\python.exe -m pip"
-        FLAKE8 = "C:\\Users\\tuant\\AppData\\Local\\Programs\\Python\\Python313\\Scripts\\flake8.exe"
-        BANDIT = "C:\\Users\\tuant\\AppData\\Local\\Programs\\Python\\Python313\\Scripts\\bandit.exe"
+        PYTHON = '"C:\\Users\\tuant\\AppData\\Local\\Programs\\Python\\Python313\\python.exe"'
+        PIP = '"C:\\Users\\tuant\\AppData\\Local\\Programs\\Python\\Python313\\python.exe" -m pip'
+        FLAKE8 = '"C:\\Users\\tuant\\AppData\\Local\\Programs\\Python\\Python313\\Scripts\\flake8.exe"'
+        BANDIT = '"C:\\Users\\tuant\\AppData\\Local\\Programs\\Python\\Python313\\Scripts\\bandit.exe"'
+        DOCKERHUB_USER = credentials('dockerhub-user')
+        DOCKERHUB_PASS = credentials('dockerhub-pass')
+        IMAGE_NAME = "tuahung248/hr-policy-assistant"
+        VERSION = "${env.BUILD_NUMBER}"
+    }
+
+    options {
+        timestamps()
+        buildDiscarder(logRotator(numToKeepStr: '10'))
+        ansiColor('xterm')
     }
 
     stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+
         stage('Build') {
             steps {
                 dir('backend') {
+                    bat "${PIP} install --upgrade pip"
                     bat "${PIP} install -r requirements.txt"
-                    // Build Docker image, tag with build number and 'latest'
-                    bat "docker build -t ${IMAGE_NAME}:${BUILD_VERSION} -t ${IMAGE_NAME}:latest ."
                 }
             }
         }
 
-        stage('Test') {
+        stage('Unit + Integration Test') {
             steps {
                 dir('backend') {
-                    // Run unit tests
-                    bat "${PYTHON} -m pytest test_app.py"
+                    bat "${PYTHON} -m pytest --cov=."
                 }
-            }
-            post {
-                always {
-                    // Archive test reports if generated
-                    junit allowEmptyResults: true, testResults: 'backend/*.xml'
-                }
+                junit 'backend/test-reports/*.xml'
             }
         }
 
-        stage('Code Quality') {
+        stage('Code Quality Gate') {
             steps {
                 dir('backend') {
-                    // Install and run flake8 with a config file if present
                     bat "${PIP} install flake8"
-                    // Use your .flake8 config file for strict rules
                     bat "${FLAKE8} --config=.flake8 main.py utils.py hr_policy_data.py"
                 }
+                // Optionally, push results to SonarQube here if set up
             }
         }
 
-        stage('Security') {
+        stage('Security Gate') {
             steps {
                 dir('backend') {
-                    // Install and run Bandit (security linter)
                     bat "${PIP} install bandit"
-                    // Fail build if critical security issues found
-                    bat "${BANDIT} -r . --exit-zero > bandit-report.txt"
+                    bat "${BANDIT} -r . --format xml --output bandit-report.xml || exit 0"
                 }
-            }
-            post {
-                always {
-                    // Archive security report
-                    archiveArtifacts artifacts: 'backend/bandit-report.txt', allowEmptyArchive: true
+                // Archive bandit report
+                archiveArtifacts artifacts: 'backend/bandit-report.xml', allowEmptyArchive: true
+                // Fail build on high vulnerabilities
+                script {
+                    def xml = readFile('backend/bandit-report.xml')
+                    if (xml.contains('severity="HIGH"')) {
+                        error('Security scan found HIGH severity issues!')
+                    }
                 }
             }
         }
 
-        stage('Deploy') {
+        stage('Build Docker Image') {
             steps {
                 dir('backend') {
-                    // Remove old test container if it exists
-                    bat "docker rm -f ${TEST_CONTAINER} || exit 0"
-                    // Deploy the built image to test environment
-                    bat "docker run -d --name ${TEST_CONTAINER} -e ENV=test -p 8000:8000 ${IMAGE_NAME}:${BUILD_VERSION}"
+                    bat 'docker build -t %IMAGE_NAME%:latest -t %IMAGE_NAME%:%VERSION% .'
                 }
             }
         }
 
-        stage('Release') {
+        stage('Deploy to Staging') {
             steps {
                 dir('backend') {
-                    // Tag and run prod container
-                    bat "docker tag ${IMAGE_NAME}:${BUILD_VERSION} ${IMAGE_NAME}:${PROD_IMAGE_TAG}"
-                    bat "docker rm -f ${PROD_CONTAINER} || exit 0"
-                    bat "docker run -d --name ${PROD_CONTAINER} -e ENV=prod -p 8001:8000 ${IMAGE_NAME}:${PROD_IMAGE_TAG}"
-                    // Optionally, push to DockerHub:
-                    // bat "docker login -u %DOCKERHUB_USER% -p %DOCKERHUB_PASS%"
-                    // bat "docker push ${IMAGE_NAME}:${BUILD_VERSION}"
-                    // bat "docker push ${IMAGE_NAME}:${PROD_IMAGE_TAG}"
+                    // Remove old container if exists
+                    bat 'docker rm -f hr-policy-assistant-staging || exit 0'
+                    // Run new container on port 8000 for staging
+                    bat 'docker run -d --name hr-policy-assistant-staging -p 8000:8000 %IMAGE_NAME%:latest'
                 }
             }
         }
 
-        stage('Monitoring') {
+        stage('Release to Production') {
+            steps {
+                dir('backend') {
+                    // Tag and push to DockerHub
+                    bat 'docker login -u %DOCKERHUB_USER% -p %DOCKERHUB_PASS%'
+                    bat 'docker push %IMAGE_NAME%:latest'
+                    bat 'docker push %IMAGE_NAME%:%VERSION%'
+                    // Remove old prod container if exists
+                    bat 'docker rm -f hr-policy-assistant-prod || exit 0'
+                    // Run prod container on different port
+                    bat 'docker run -d --name hr-policy-assistant-prod -p 8001:8000 %IMAGE_NAME%:latest'
+                }
+            }
+        }
+
+        stage('Monitoring and Alerts') {
             steps {
                 script {
-                    // Wait for app to start up (use a small sleep if needed)
-                    bat 'ping -n 11 127.0.0.1 > nul'
-                    // Health check both test and prod endpoints
-                    def testStatus = bat(script: 'curl -s http://localhost:8000/', returnStatus: true)
-                    def prodStatus = bat(script: 'curl -s http://localhost:8001/', returnStatus: true)
-                    if (testStatus != 0 || prodStatus != 0) {
-                        error("Healthcheck failed! Test or Production endpoint is not responding.")
+                    // Simulate monitoring check: HTTP health probe and log response
+                    def result = bat(script: 'curl -s -o nul -w "%{http_code}" http://localhost:8001/', returnStdout: true).trim()
+                    if (result != '200') {
+                        mail to: 'yourteam@deakin.edu.au',
+                             subject: "Production App Health Check Failed",
+                             body: "Health check failed with status: ${result}"
+                        error "App is DOWN! Health check failed."
                     }
                 }
             }
@@ -111,13 +122,15 @@ pipeline {
     }
 
     post {
-        always {
-            echo 'Pipeline finished!'
-            // Optionally: clean up stopped containers/images to save disk space
+        success {
+            echo "Pipeline completed successfully! All quality gates and deployment stages passed."
         }
         failure {
-            // Email or alert team here if needed
-            echo 'Pipeline failed! Please check the logs for details.'
+            echo "Pipeline failed. Please check above logs and reports."
+            // Optionally, send failure notification
+        }
+        always {
+            cleanWs()
         }
     }
 }
