@@ -119,16 +119,17 @@ pipeline {
             }
         }
 
-    post {
-        success {
-            echo "Pipeline completed successfully! All quality gates and deployment stages passed."
-        }
-        failure {
-            echo "Pipeline failed. Please check above logs and reports."
-        }
-        always {
-            cleanWs()
-            echo "Workspace cleaned up after build."
+        post {
+            success {
+                echo "Pipeline completed successfully! All quality gates and deployment stages passed."
+            }
+            failure {
+                echo "Pipeline failed. Please check above logs and reports."
+            }
+            always {
+                cleanWs()
+                echo "Workspace cleaned up after build."
+            }
         }
     }
 }
