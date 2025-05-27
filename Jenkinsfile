@@ -106,7 +106,7 @@ pipeline {
                     bat 'ping -n 8 127.0.0.1 > nul'
                     echo 'About to run health check: curl -s -o nul -w "%{http_code}" http://localhost:8001/'
                     def result = bat(
-                        script: 'curl -s -o nul -w "%{http_code}" http://localhost:8001/',
+                        script: "curl -s -o nul -w \"%{http_code}\" http://localhost:8001/",
                         returnStdout: true
                     ).trim()
                     if (result != '200') {
