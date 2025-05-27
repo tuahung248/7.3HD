@@ -100,13 +100,10 @@ pipeline {
                 }
             }
         }
-
         stage('Monitoring and Alerts') {
             steps {
                 script {
-                    // Wait for the container to start
                     bat 'ping -n 8 127.0.0.1 > nul'
-                    // Perform the health check
                     def result = bat(
                         script: 'curl -s -o nul -w "%{http_code}" http://localhost:8001/',
                         returnStdout: true
@@ -118,18 +115,17 @@ pipeline {
                 }
             }
         }
-
-        post {
-            success {
-                echo "Pipeline completed successfully! All quality gates and deployment stages passed."
-            }
-            failure {
-                echo "Pipeline failed. Please check above logs and reports."
-            }
-            always {
-                cleanWs()
-                echo "Workspace cleaned up after build."
-            }
+    }
+    post {
+        success {
+            echo "Pipeline completed successfully! All quality gates and deployment stages passed."
+        }
+        failure {
+            echo "Pipeline failed. Please check above logs and reports."
+        }
+        always {
+            cleanWs()
+            echo "Workspace cleaned up after build."
         }
     }
 }
