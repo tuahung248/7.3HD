@@ -78,7 +78,11 @@ pipeline {
         stage('Deploy to Staging') {
             steps {
                 dir('backend') {
-                    bat 'docker rm -f hr-policy-assistant-staging || exit 0'
+                    // Remove any container using port 8000 (Windows PowerShell version)
+                    bat '''
+                        FOR /F "tokens=*" %%i IN ('docker ps --filter "publish=8000" --format "{{.ID}}"') DO docker rm -f %%i
+                    '''
+                    // Run new container on port 8000 for staging
                     bat 'docker run -d --name hr-policy-assistant-staging -p 8000:8000 %IMAGE_NAME%:latest'
                 }
             }
