@@ -6,6 +6,7 @@ pipeline {
             steps {
                 dir('backend') {
                     bat '"C:\\Users\\tuant\\AppData\\Local\\Programs\\Python\\Python313\\python.exe" -m pip install -r requirements.txt'
+                    bat 'docker build -t hr-policy-assistant .'
                 }
             }
         }
@@ -24,15 +25,38 @@ pipeline {
                 }
             }
         }
-        stage('Docker Build') {
+        stage('Security') {
             steps {
                 dir('backend') {
-                    bat 'docker build -t hr-policy-assistant .'
+                    bat '"C:\\Users\\tuant\\AppData\\Local\\Programs\\Python\\Python313\\python.exe" -m pip install bandit'
+                    bat '"C:\\Users\\tuant\\AppData\\Local\\Programs\\Python\\Python313\\Scripts\\bandit.exe" -r .'
                 }
             }
         }
+        stage('Deploy') {
+            steps {
+                dir('backend') {
+                    bat 'docker rm -f hr-policy-assistant-test || exit 0'
+                    bat 'docker run -d --name hr-policy-assistant-test -p 8000:8000 hr-policy-assistant'
+                }
+            }
+        }
+        stage('Release') {
+            steps {
+                dir('backend') {
+                    bat 'docker tag hr-policy-assistant hr-policy-assistant:prod'
+                    bat 'docker rm -f hr-policy-assistant-prod || exit 0'
+                    bat 'docker run -d --name hr-policy-assistant-prod -p 8001:8000 hr-policy-assistant:prod'
+                }
+            }
+        }
+        stage('Monitoring') {
+            steps {
+                bat 'curl http://localhost:8001/docs || echo "App is down!"'
+                // Or use PowerShell for more advanced checks and logs
+            }
+        }
     }
-
     post {
         always {
             echo 'Pipeline finished!'
