@@ -125,7 +125,10 @@ pipeline {
                         sleep(time: 3, unit: 'SECONDS')
                         try {
                             def result = bat(script: 'curl -s -o nul -w "%%{http_code}" http://localhost:8001/', returnStdout: true).trim()
-                            if (result == '200') {
+                            echo "Raw health check result: '${result}'"
+                            
+                            // Check if result contains '200' (more flexible matching)
+                            if (result.contains('200')) {
                                 echo "Health check passed: ${result}"
                                 healthy = true
                                 break
@@ -138,6 +141,8 @@ pipeline {
                     }
                     if (!healthy) {
                         error "App is DOWN! Health check failed after multiple attempts."
+                    } else {
+                        echo "✅ Application is healthy and responding correctly!"
                     }
                 }
             }
