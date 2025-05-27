@@ -20,7 +20,10 @@ POLICIES = [
     {
         "roles": ["employee", "full-time", "part-time"],
         "keywords": ["overtime", "extra hours", "work late"],
-        "answer": "Employees may be eligible for overtime if pre-approved by management.",
+        "answer": (
+            "Employees may be eligible for overtime if pre-approved by "
+            "management."
+        ),
         "link": "https://company.com/policies/overtime"
     },
 ]
