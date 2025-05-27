@@ -115,15 +115,6 @@ pipeline {
                 }
             }
         }
-        
-        stage('Curl Test') {
-            steps {
-                bat 'curl --version'
-                bat 'curl http://localhost:8001/ || echo "Initial curl test failed - this is normal"'
-                bat 'curl -s -o nul -w "%{http_code}" http://localhost:8001/ || echo "Status check failed - this is normal"'
-            }
-        }
-        
         stage('Monitoring and Alerts') {
             steps {
                 script {
