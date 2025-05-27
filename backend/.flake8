@@ -6,3 +6,4 @@ select = E,F,W,C90
 statistics = true
 show-source = true
 count = true
+ignore = W503
