@@ -1,6 +1,7 @@
 pipeline {
     agent any
 
+    stages {
         stage('Build') {
             steps {
                 dir('backend') {
@@ -8,7 +9,6 @@ pipeline {
                 }
             }
         }
-
         stage('Test') {
             steps {
                 dir('backend') {
@@ -16,17 +16,14 @@ pipeline {
                 }
             }
         }
-
         stage('Code Quality') {
             steps {
                 dir('backend') {
-                    // Replace with flake8, pylint, or your favorite linter
                     sh 'pip install flake8'
                     sh 'flake8 main.py utils.py hr_policy_data.py'
                 }
             }
         }
-
         stage('Docker Build') {
             steps {
                 dir('backend') {
@@ -34,8 +31,6 @@ pipeline {
                 }
             }
         }
-
-        // Add more stages for Deploy, Release, Security, Monitoring as you build them!
     }
 
     post {
