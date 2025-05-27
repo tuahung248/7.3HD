@@ -1,13 +1,6 @@
 pipeline {
     agent any
 
-    stages {
-        stage('Clone') {
-            steps {
-                git 'https://github.com/tuahung248/7.3HD.git'
-            }
-        }
-
         stage('Build') {
             steps {
                 dir('backend') {
