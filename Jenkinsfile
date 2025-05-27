@@ -6,8 +6,7 @@ pipeline {
         PIP = '"C:\\Users\\tuant\\AppData\\Local\\Programs\\Python\\Python313\\python.exe" -m pip'
         FLAKE8 = '"C:\\Users\\tuant\\AppData\\Local\\Programs\\Python\\Python313\\Scripts\\flake8.exe"'
         BANDIT = '"C:\\Users\\tuant\\AppData\\Local\\Programs\\Python\\Python313\\Scripts\\bandit.exe"'
-        DOCKERHUB_USER = credentials('dockerhub-user')
-        DOCKERHUB_PASS = credentials('dockerhub-pass')
+        DOCKERHUB_CREDENTIALS = credentials('dockerhub')
         IMAGE_NAME = "tuahung248/hr-policy-assistant"
         VERSION = "${env.BUILD_NUMBER}"
     }
@@ -49,7 +48,6 @@ pipeline {
                     bat "${PIP} install flake8"
                     bat "${FLAKE8} --config=.flake8 main.py utils.py hr_policy_data.py"
                 }
-                // Optionally, push results to SonarQube here if set up
             }
         }
 
@@ -59,12 +57,10 @@ pipeline {
                     bat "${PIP} install bandit"
                     bat "${BANDIT} -r . --format xml --output bandit-report.xml || exit 0"
                 }
-                // Archive bandit report
                 archiveArtifacts artifacts: 'backend/bandit-report.xml', allowEmptyArchive: true
-                // Fail build on high vulnerabilities
                 script {
                     def xml = readFile('backend/bandit-report.xml')
-                    if (xml.contains('severity="HIGH"')) {
+                    if (xml.contains('severity=\"HIGH\"')) {
                         error('Security scan found HIGH severity issues!')
                     }
                 }
@@ -82,9 +78,7 @@ pipeline {
         stage('Deploy to Staging') {
             steps {
                 dir('backend') {
-                    // Remove old container if exists
                     bat 'docker rm -f hr-policy-assistant-staging || exit 0'
-                    // Run new container on port 8000 for staging
                     bat 'docker run -d --name hr-policy-assistant-staging -p 8000:8000 %IMAGE_NAME%:latest'
                 }
             }
@@ -93,13 +87,11 @@ pipeline {
         stage('Release to Production') {
             steps {
                 dir('backend') {
-                    // Tag and push to DockerHub
-                    bat 'docker login -u %DOCKERHUB_USER% -p %DOCKERHUB_PASS%'
+                    // Secure DockerHub login using Jenkins credentials
+                    bat 'docker login -u %DOCKERHUB_CREDENTIALS_USR% -p %DOCKERHUB_CREDENTIALS_PSW%'
                     bat 'docker push %IMAGE_NAME%:latest'
                     bat 'docker push %IMAGE_NAME%:%VERSION%'
-                    // Remove old prod container if exists
                     bat 'docker rm -f hr-policy-assistant-prod || exit 0'
-                    // Run prod container on different port
                     bat 'docker run -d --name hr-policy-assistant-prod -p 8001:8000 %IMAGE_NAME%:latest'
                 }
             }
@@ -108,12 +100,15 @@ pipeline {
         stage('Monitoring and Alerts') {
             steps {
                 script {
-                    // Simulate monitoring check: HTTP health probe and log response
+                    // Wait for container to start
+                    bat 'ping -n 8 127.0.0.1 > nul'
                     def result = bat(script: 'curl -s -o nul -w "%{http_code}" http://localhost:8001/', returnStdout: true).trim()
                     if (result != '200') {
-                        mail to: 'yourteam@deakin.edu.au',
-                             subject: "Production App Health Check Failed",
-                             body: "Health check failed with status: ${result}"
+                        // Only works if Jenkins Mailer plugin and SMTP are configured:
+                        // mail to: 'yourteam@deakin.edu.au',
+                        //      subject: "Production App Health Check Failed",
+                        //      body: "Health check failed with status: ${result}"
+                        echo "ALERT: Health check failed with status: ${result}"
                         error "App is DOWN! Health check failed."
                     }
                 }
@@ -127,10 +122,10 @@ pipeline {
         }
         failure {
             echo "Pipeline failed. Please check above logs and reports."
-            // Optionally, send failure notification
         }
         always {
             cleanWs()
+            echo "Workspace cleaned up after build."
         }
     }
 }
