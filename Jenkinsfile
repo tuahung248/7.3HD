@@ -1,10 +1,6 @@
 pipeline {
     agent any
 
-    environment {
-        // Set up variables if needed
-    }
-
     stages {
         stage('Clone') {
             steps {
