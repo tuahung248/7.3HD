@@ -111,19 +111,25 @@ pipeline {
             steps {
                 script {
                     bat 'ping -n 8 127.0.0.1 > nul'
-                    echo 'About to run health check: curl -s -o nul -w "%{http_code}" http://localhost:8001/'
-                    def result = bat(
-                        script: 'curl -s -o nul -w "%{http_code}" http://localhost:8001/',
-                        returnStdout: true
-                    ).trim()
-                    if (result != '200') {
-                        echo "ALERT: Health check failed with status: ${result}"
-                        error "App is DOWN! Health check failed."
+                    // Wait for up to 30 seconds for the app to be healthy
+                    def healthy = false
+                    for (int i = 0; i < 10; i++) {
+                        sleep(time: 3, unit: 'SECONDS')
+                        def result = bat(script: 'curl -s -o nul -w "%{http_code}" http://localhost:8001/', returnStdout: true).trim()
+                        if (result == '200') {
+                            echo "Health check passed: ${result}"
+                            healthy = true
+                            break
+                        } else {
+                            echo "Health check failed with status: ${result} (try ${i+1}/10)"
+                        }
+                    }
+                    if (!healthy) {
+                        error "App is DOWN! Health check failed after multiple attempts."
                     }
                 }
             }
         }
-    }
     post {
         success {
             echo "Pipeline completed successfully! All quality gates and deployment stages passed."
