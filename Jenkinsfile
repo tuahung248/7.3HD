@@ -4,32 +4,30 @@ pipeline {
     stages {
         stage('Check Python') {
             steps {
-                bat 'where python'
-                bat 'where pip'
-                bat 'python --version'
-                bat 'pip --version'
+                bat '"C:\\Users\\tuant\\AppData\\Local\\Programs\\Python\\Python313\\python.exe" --version'
+                bat '"C:\\Users\\tuant\\AppData\\Local\\Programs\\Python\\Python313\\python.exe" -m pip --version'
                 bat 'echo %PATH%'
             }
         }
         stage('Build') {
             steps {
                 dir('backend') {
-                    bat 'python -m pip install -r requirements.txt'
+                    bat '"C:\\Users\\tuant\\AppData\\Local\\Programs\\Python\\Python313\\python.exe" -m pip install -r requirements.txt'
                 }
             }
         }
         stage('Test') {
             steps {
                 dir('backend') {
-                    bat 'pytest test_app.py'
+                    bat '"C:\\Users\\tuant\\AppData\\Local\\Programs\\Python\\Python313\\python.exe" -m pytest test_app.py'
                 }
             }
         }
         stage('Code Quality') {
             steps {
                 dir('backend') {
-                    bat 'pip install flake8'
-                    bat 'flake8 main.py utils.py hr_policy_data.py'
+                    bat '"C:\\Users\\tuant\\AppData\\Local\\Programs\\Python\\Python313\\python.exe" -m pip install flake8'
+                    bat '"C:\\Users\\tuant\\AppData\\Local\\Programs\\Python\\Python313\\Scripts\\flake8.exe" main.py utils.py hr_policy_data.py'
                 }
             }
         }
