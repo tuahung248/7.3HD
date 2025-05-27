@@ -142,7 +142,7 @@ pipeline {
                     if (!healthy) {
                         error "App is DOWN! Health check failed after multiple attempts."
                     } else {
-                        echo "✅ Application is healthy and responding correctly!"
+                        echo "Application is healthy and responding correctly!"
                     }
                 }
             }
