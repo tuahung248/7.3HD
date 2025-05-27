@@ -15,21 +15,19 @@ def ask_policy(
     question: str = Query(..., description="Your HR-related question"),
     role: str = Query(..., description="Employee role")
 ):
-    # Basic search for matching policy
     result = next(
         (
             {
-                "answer": p['answer'],
-                "policy_link": p['link']
+                "answer": p["answer"],
+                "policy_link": p["link"],
             }
             for p in POLICIES
             if (
-                role.lower() in p['roles'] and
-                any(word in question.lower() for word in p['keywords'])
+                role.lower() in p["roles"] and
+                any(word in question.lower() for word in p["keywords"])
             )
         ),
         {"answer": "Sorry, I don't know. Please contact HR."}
     )
-    # Log the interaction
     log_interaction(question, role, result)
     return result
