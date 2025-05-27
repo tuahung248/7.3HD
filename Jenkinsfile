@@ -52,7 +52,7 @@ pipeline {
         }
         stage('Monitoring') {
             steps {
-                bat 'timeout /T 10'
+                bat 'ping -n 11 127.0.0.1 > nul'
                 bat 'curl http://localhost:8001/docs || echo "App is down!"'
                 // Or use PowerShell for more advanced checks and logs
             }
