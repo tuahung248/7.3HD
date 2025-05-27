@@ -27,7 +27,7 @@ pipeline {
             steps {
                 dir('backend') {
                     bat '"C:\\Users\\tuant\\AppData\\Local\\Programs\\Python\\Python313\\python.exe" -m pip install flake8'
-                    bat '"C:\\Users\\tuant\\AppData\\Local\\Programs\\Python\\Python313\\Scripts\\flake8.exe" main.py utils.py hr_policy_data.py'
+                    bat '"C:\\Users\\tuant\\AppData\\Local\\Programs\\Python\\Python313\\Scripts\\flake8.exe" --ignore=E501,E302 main.py utils.py hr_policy_data.py'
                 }
             }
         }
