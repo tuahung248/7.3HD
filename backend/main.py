@@ -23,8 +23,8 @@ def ask_policy(
             }
             for p in POLICIES
             if (
-                role.lower() in p["roles"] and
-                any(word in question.lower() for word in p["keywords"])
+                role.lower() in p["roles"]
+                and any(word in question.lower() for word in p["keywords"])
             )
         ),
         {"answer": "Sorry, I don't know. Please contact HR."}
